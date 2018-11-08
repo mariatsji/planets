@@ -25,7 +25,7 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
-  - scientific
+  - hmatrix
 
 executables:
   planets-exe:
@@ -38,6 +38,7 @@ executables:
     dependencies:
     - planets
     - gloss
+    - hmatrix
 
 tests:
   planets-test:

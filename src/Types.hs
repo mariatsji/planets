@@ -2,28 +2,28 @@
 
 module Types
     ( Planet(..)
-    , Vect(..)
     , mass
     , diameter
-    , pull
+    , pullOn
     , distance
-    , createVector
+    , distanceScale
     , alterSpeed
     , newPoint
     )
 where
 
-import Data.Scientific
+import           Numeric.LinearAlgebra
 
 data Planet = Earth  | Jupiter deriving (Eq, Show)
 
-data Vect = Vect Float Float deriving (Eq, Show)
-
 type Point = (Float, Float)
 
-mass :: Planet -> Scientific
-mass Earth   = fromFloatDigits 5972e24 --kg
-mass Jupiter = fromFloatDigits 1898e27
+mass :: Planet -> Int
+mass Earth   = 5972
+mass Jupiter = 1898000
+
+distanceScale :: Float
+distanceScale = 1000000
 
 diameter :: Planet -> Integer
 diameter Earth   = 12756000 -- m
@@ -35,30 +35,24 @@ distance (aX, aY) (bX, bY) =
         width   = abs (bX - aX)
         height2 = height ^ 2
         width2  = width ^ 2
-    in  sqrt (height2 + width2)
+    in  sqrt (height2 + width2) * distanceScale * 100 -- planets actual size so brag about distance
 
-pull :: Planet -> Point -> Planet -> Point -> Vect -- a accelaration pointing out from a
-pull on a from b =
-    let gConstant   = fromFloatDigits 6674e-11
-        massA       = mass on
-        massB       = mass from
-        dist        = distance a b
-        sciDist     = fromFloatDigits $ dist ^ 2
-        rVect       = createVector a b
-        forceScalar :: Scientific
-        forceScalar = (gConstant * massA * massB) / sciDist
-        forceForA   = forceScalar / massA
-    in  scaleVect rVect forceForA
+pullOn :: Planet -> Point -> Planet -> Point -> Vector Float -- a accelaration pointing out from a
+pullOn on a from b =
+    let gConstant = 100000000
+        massA     = mass on
+        massB     = mass from
+        dist      = distance b a ^ 2
+        forceScalar = (-gConstant * fromIntegral massA * fromIntegral massB) / dist
+    in  scale forceScalar (vectorize b a)  -- bug.. pull always in (+,+) direction here
 
-scaleVect :: Vect -> Scientific -> Vect
-scaleVect (Vect ax bx) skalar =
-    Vect (ax * (toRealFloat skalar)) (bx * (toRealFloat skalar))
+vectorize :: Point -> Point -> Vector Float
+vectorize (ax, ay) (bx, by) = fromList [bx - ax, by - ay]
 
-createVector :: Point -> Point -> Vect
-createVector (ax, ay) (bx, by) = Vect (abs $ bx - ax) (abs $ by - ay)
+alterSpeed :: Vector Float -> Vector Float -> Vector Float
+alterSpeed current pullForce = add current pullForce -- todo
 
-alterSpeed :: Vect -> Vect -> Vect
-alterSpeed (Vect ax ay) (Vect bx by) = Vect (ax + bx) (ay + by)
-
-newPoint :: Point -> Vect -> Point
-newPoint (x,y) (Vect a b) = (x + a, y + b)
+newPoint :: Point -> Vector Float -> Point
+newPoint (ax, ay) v = case toList v of
+  [bx,by] -> (ax + bx, ay + by)
+  x -> error $ "cannot create new point from speed vector with /= 2 elements " ++ show x

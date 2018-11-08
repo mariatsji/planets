@@ -5,23 +5,25 @@ import           Types
 import           Graphics.Gloss
 import           Graphics.Gloss.Data.Color
 import           Graphics.Gloss.Data.ViewPort
+import qualified Numeric.LinearAlgebra         as LinAlg
 
 data Model = Model
   { earth :: Point
-  , earthSpeed :: Vect
+  , earthSpeed :: LinAlg.Vector Float
   , jupiter :: Point
-  , jupiterSpeed :: Vect
+  , jupiterSpeed :: LinAlg.Vector Float
   } deriving (Eq, Show)
 
 
-initialModel = Model 
-  { earth = (-200, -200)
-  , earthSpeed = Vect 0 1
-  , jupiter = (200, 200)
-  , jupiterSpeed = Vect 0 (-1)}
+initialModel = Model
+  { earth        = (-200, -200)
+  , earthSpeed   = LinAlg.fromList [0, 10]
+  , jupiter      = (200, 200)
+  , jupiterSpeed = LinAlg.fromList [0, (-10)]
+  }
 
 main :: IO ()
-main = simulate (InWindow "Newtons Planets" (800, 800) (500, 500))
+main = simulate (InWindow "Newtons Planets" (1200, 800) (200, 500))
                 black
                 10
                 initialModel
@@ -29,7 +31,7 @@ main = simulate (InWindow "Newtons Planets" (800, 800) (500, 500))
                 stepFunction
 
 radiusScaleFactor :: Integer -> Float
-radiusScaleFactor diameter = fromIntegral diameter / 1000000
+radiusScaleFactor diameter = fromIntegral diameter / distanceScale
 
 earthRadius :: Float
 earthRadius = radiusScaleFactor . diameter $ Earth
@@ -49,16 +51,16 @@ drawModel model =
 
 stepFunction :: ViewPort -> Float -> Model -> Model
 stepFunction vp secs model =
-  let earthPoint = earth model
-      jupiterPoint = jupiter model
-      earthSpeed' = earthSpeed model
+  let earthPoint    = earth model
+      jupiterPoint  = jupiter model
+      earthSpeed'   = earthSpeed model
       jupiterSpeed' = jupiterSpeed model
-      earthPulled = pull Earth earthPoint Jupiter jupiterPoint
-      jupiterPulled = pull Jupiter jupiterPoint Earth earthPoint
+      earthPulled   = pullOn Earth earthPoint Jupiter jupiterPoint
+      jupiterPulled = pullOn Jupiter jupiterPoint Earth earthPoint
   in  Model
-        { earth   = newPoint earthPoint earthSpeed'
-        , earthSpeed = alterSpeed earthSpeed' earthPulled
-        , jupiter = newPoint jupiterPoint jupiterSpeed'
+        { earth        = newPoint earthPoint earthSpeed'
+        , earthSpeed   = alterSpeed earthSpeed' earthPulled
+        , jupiter      = newPoint jupiterPoint jupiterSpeed'
         , jupiterSpeed = alterSpeed jupiterSpeed' jupiterPulled
         }
 
