@@ -2,18 +2,32 @@ module Main where
 
 import           Data.Monoid                              ( (<>) )
 import           Types
+import qualified Text.Printf                   as Printf
 import           Graphics.Gloss
 import           Graphics.Gloss.Data.Color
 import           Graphics.Gloss.Data.ViewPort
 import qualified Numeric.LinearAlgebra         as LinAlg
+
+windowSize :: (Int, Int)
+windowSize = (1200, 800)
+
+fps :: Int
+fps = 8
 
 data Model = Model
   { earth :: Point
   , earthSpeed :: LinAlg.Vector Float
   , jupiter :: Point
   , jupiterSpeed :: LinAlg.Vector Float
-  } deriving (Eq, Show)
+  } deriving (Show, Eq)
 
+earthPosString :: Model -> String
+earthPosString m =
+  Printf.printf "earth (%.1f, %.1f)" (fst . earth $ m) (snd . earth $ m)
+
+jupiterPosString :: Model -> String
+jupiterPosString m =
+  Printf.printf "jupiter (%.1f, %.1f)" (fst . jupiter $ m) (snd . jupiter $ m)
 
 initialModel = Model
   { earth        = (-200, -200)
@@ -23,9 +37,9 @@ initialModel = Model
   }
 
 main :: IO ()
-main = simulate (InWindow "Newtons Planets" (1200, 800) (200, 500))
+main = simulate (InWindow "Newtons Planets" windowSize (200, 500))
                 black
-                8
+                fps
                 initialModel
                 drawModel
                 stepFunction
@@ -47,7 +61,15 @@ drawModel model =
       (jupiterX, jupiterY) = jupiter model
       earthPos             = translate earthX earthY earth'
       jupiterPos           = translate jupiterX jupiterY jupiter'
-  in  earthPos <> jupiterPos
+  in  earthPos <> jupiterPos <> modelInfo (earthPosString model) (-580) (-350) <>
+        modelInfo (jupiterPosString model) (-580) (-300)
+
+modelInfo :: String -> Integer -> Integer -> Picture
+modelInfo text a b =
+  let text'  = Text text
+      scaled = scale 0.1 0.1 text'
+      moved  = translate (fromIntegral a) (fromIntegral b) scaled
+  in  color red moved
 
 stepFunction :: ViewPort -> Float -> Model -> Model
 stepFunction vp secs model =
