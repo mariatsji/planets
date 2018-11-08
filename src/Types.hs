@@ -39,12 +39,14 @@ distance (aX, aY) (bX, bY) =
 
 pullOn :: Planet -> Point -> Planet -> Point -> Vector Float -- a accelaration pointing out from a
 pullOn on a from b =
-    let gConstant = 100000000
+    let gConstant = 6 * 10^12
         massA     = mass on
         massB     = mass from
         dist      = distance b a ^ 2
-        forceScalar = (-gConstant * fromIntegral massA * fromIntegral massB) / dist
-    in  scale forceScalar (vectorize b a)  -- bug.. pull always in (+,+) direction here
+        forceScalar =
+            (-gConstant * fromIntegral massA * fromIntegral massB) / dist
+        accScalar = forceScalar / fromIntegral massA
+    in scale accScalar (vectorize b a)
 
 vectorize :: Point -> Point -> Vector Float
 vectorize (ax, ay) (bx, by) = fromList [bx - ax, by - ay]
@@ -54,5 +56,8 @@ alterSpeed current pullForce = add current pullForce -- todo
 
 newPoint :: Point -> Vector Float -> Point
 newPoint (ax, ay) v = case toList v of
-  [bx,by] -> (ax + bx, ay + by)
-  x -> error $ "cannot create new point from speed vector with /= 2 elements " ++ show x
+    [bx, by] -> (ax + bx, ay + by)
+    x ->
+        error
+            $  "cannot create new point from speed vector with /= 2 elements "
+            ++ show x

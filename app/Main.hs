@@ -17,15 +17,15 @@ data Model = Model
 
 initialModel = Model
   { earth        = (-200, -200)
-  , earthSpeed   = LinAlg.fromList [0, 10]
-  , jupiter      = (200, 200)
-  , jupiterSpeed = LinAlg.fromList [0, (-10)]
+  , earthSpeed   = LinAlg.fromList [-10, 10]
+  , jupiter      = (0, 0)
+  , jupiterSpeed = LinAlg.fromList [0, 0]
   }
 
 main :: IO ()
 main = simulate (InWindow "Newtons Planets" (1200, 800) (200, 500))
                 black
-                10
+                8
                 initialModel
                 drawModel
                 stepFunction
