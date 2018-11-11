@@ -39,14 +39,16 @@ distance (aX, aY) (bX, bY) =
 
 pullOn :: Planet -> Point -> Planet -> Point -> Vector Float -- a accelaration pointing out from a
 pullOn on a from b =
-    let gConstant = 6 * 10^12
+    let
+        gConstant = 15 * 10 ^ 12
         massA     = mass on
         massB     = mass from
         dist      = distance b a ^ 2
         forceScalar =
             (-gConstant * fromIntegral massA * fromIntegral massB) / dist
         accScalar = forceScalar / fromIntegral massA
-    in scale accScalar (vectorize b a)
+    in
+        scale accScalar (vectorize b a)
 
 vectorize :: Point -> Point -> Vector Float
 vectorize (ax, ay) (bx, by) = fromList [bx - ax, by - ay]

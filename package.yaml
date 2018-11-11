@@ -39,6 +39,7 @@ executables:
     - planets
     - gloss
     - hmatrix
+    - monad-par
 
 tests:
   planets-test:

@@ -1,5 +1,6 @@
 module Main where
 
+import           Control.Monad.Par
 import           Data.Monoid                              ( (<>) )
 import           Types
 import qualified Text.Printf                   as Printf
@@ -8,11 +9,12 @@ import           Graphics.Gloss.Data.Color
 import           Graphics.Gloss.Data.ViewPort
 import qualified Numeric.LinearAlgebra         as LinAlg
 
+
 windowSize :: (Int, Int)
 windowSize = (1200, 800)
 
 fps :: Int
-fps = 8
+fps = 10
 
 data Model = Model
   { earth :: Point
@@ -30,8 +32,8 @@ jupiterPosString m =
   Printf.printf "jupiter (%.1f, %.1f)" (fst . jupiter $ m) (snd . jupiter $ m)
 
 initialModel = Model
-  { earth        = (-200, -200)
-  , earthSpeed   = LinAlg.fromList [-10, 10]
+  { earth        = (-200, 0)
+  , earthSpeed   = LinAlg.fromList [0, 20]
   , jupiter      = (0, 0)
   , jupiterSpeed = LinAlg.fromList [0, 0]
   }
@@ -77,8 +79,13 @@ stepFunction vp secs model =
       jupiterPoint  = jupiter model
       earthSpeed'   = earthSpeed model
       jupiterSpeed' = jupiterSpeed model
-      earthPulled   = pullOn Earth earthPoint Jupiter jupiterPoint
-      jupiterPulled = pullOn Jupiter jupiterPoint Earth earthPoint
+      (earthPulled, jupiterPulled)  = runPar $ do
+        p1 <- spawnP $ pullOn Earth earthPoint Jupiter jupiterPoint
+        p2 <- spawnP $ pullOn Jupiter jupiterPoint Earth earthPoint
+        p1' <- get p1
+        p2' <- get p2
+        return (p1', p2')
+
   in  Model
         { earth        = newPoint earthPoint earthSpeed'
         , earthSpeed   = alterSpeed earthSpeed' earthPulled
